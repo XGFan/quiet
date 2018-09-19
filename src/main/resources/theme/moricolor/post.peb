@@ -1,0 +1,97 @@
+{# @pebvariable name="config" type="com.xulog.quite.QuietConfig" #}
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="<?php $this->options->charset(); ?>">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+    <meta name="renderer" content="webkit">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>{{ title }} - {{ config.siteName }}</title>
+
+    <link href="/css/mori.css" rel="stylesheet">
+    <link href="/css/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/flat-ui.min.css" rel="stylesheet">
+    <link href="/css/prism.css" rel="stylesheet">
+    <link href="/fonts/md/css/material-design-iconic-font.min.css" rel="stylesheet">
+    <link href="/js/zoom-js/css/zoom.css" rel="stylesheet">
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements. All other JS at the end of file. -->
+    <!--[if lt IE 9]>
+    <script src="/js/vendor/html5shiv.js"></script>
+    <script src="/js/vendor/respond.min.js"></script>
+    <![endif]-->
+</head>
+<body>
+<header>
+    <div class="container" id="main">
+        <a id="logo" href="{{ config.siteUrl }}">
+            <h2 style="color: #34495e;font-weight: normal">{{ title }}</h2>
+        </a>
+    </div>
+</header>
+
+<div id="main" class="container">
+    <div id="main-page" role="main" style="display: none;">
+        <article>
+            <div class="text-right">
+                <div class="post-info">
+                {% for cat in categories %}
+                    <span class="post-info-n"><a href="{{ cat.second }}">{{ cat.first }}</a></span>
+                {% endfor %}
+
+                    <a>
+                        <time datetime="{{ create }}"
+                              itemprop="datePublished">{{ create | date(format="yyyy/MM/d") }}</time>
+                    </a>
+                </div>
+            </div>
+            <div class="post-content" itemprop="articleBody">
+            {{ markdown | raw }}
+            </div>
+        </article>
+    </div>
+
+</div>
+<!-- jQuery (necessary for Flat UI's JavaScript plugins) -->
+<script src="/js/vendor/jquery.min.js"></script>
+<script src="/js/zoom-js/js/zoom.js"></script>
+<script src="/js/vendor/bootstrap.js"></script>
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<!-- <script src="js/vendor/video.js"></script> -->
+<script src="/js/flat-ui.min.js"></script>
+<script src="/js/prism.js"></script>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $("#main-index").fadeIn(800);
+        $("#main-archive").fadeIn(800);
+        $("#main-post").fadeIn(500);
+        $("#main-page").fadeIn(500);
+        if (window.location.hash != '') {
+            var i = window.location.hash.indexOf('#comment');
+            var ii = window.location.hash.indexOf('#respond-post');
+            if (i != '-1' || ii != '-1') {
+                $("#comments").fadeIn(1000);
+            }
+        }
+        $("#thatsi").fadeIn(1300);
+        $("#footer").css('display', 'block');
+
+        // 锚点平滑滚动
+        $('a[href*=#],area[href*=#]').click(function () {
+            $body = (window.opera) ? (document.compatMode == "CSS1Compat" ? $('html') : $('body')) : $('html,body'); //Opera BUG fixed
+            if (location.pathname.replace(/^\//, '') == this.pathname.replace(/^\//, '') && location.hostname == this.hostname && location.search == this.search) {
+                var $target = $(this.hash);
+                $target = $target.length && $target || $('[name=' + this.hash.slice(1) + ']');
+                if ($target.length) {
+                    var targetOffset = $target.offset().top;
+                    $('html,body').animate({
+                                scrollTop: targetOffset
+                            },
+                            1000);
+                    return false;
+                }
+            }
+        });
+    });
+</script>
+</body>
+</html>

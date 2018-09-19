@@ -1,0 +1,109 @@
+{# @pebvariable name="config" type="com.xulog.quite.QuietConfig" #}
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+    <meta name="renderer" content="webkit">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>{{current | join('/')}}-{{ config.siteName }}</title>
+
+    <link href="/css/mori.css" rel="stylesheet">
+    <link href="/css/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/flat-ui.min.css" rel="stylesheet">
+    <link href="/css/prism.css" rel="stylesheet">
+    <link href="/fonts/md/css/material-design-iconic-font.min.css" rel="stylesheet">
+    <link href="/js/zoom-js/css/zoom.css" rel="stylesheet">
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements. All other JS at the end of file. -->
+    <!--[if lt IE 9]>
+    <script src="/js/vendor/html5shiv.js"></script>
+    <script src="/js/vendor/respond.min.js"></script>
+    <![endif]-->
+    <meta name="template" content="Moricolor"/>
+</head>
+<body>
+
+<header>
+    <div class="container" id="main">
+        <a id="logo" href="{{config.siteUrl}}">
+            <h1 style="color: #34495e;">{{config.siteName}}</h1>
+        </a>
+        <p class="description"></p>
+        <hr>
+    </div>
+
+</header>
+
+<div class="container" id="main-archive" style="display: none;">
+    <div class="post-content">
+        <h4 class="archive-title">Category {{current | join(" \ ") | raw}}</h4>
+        {% for child in children %}
+            <article class="post">
+                <div class="arc-t">
+                    <div class="arc-tile">
+                        <small><a itemtype="url" href="{{child.second}}">{{child.first}}</a></small>
+                        <br>
+                        <span class="arc-date">Category</span>
+                    </div>
+                </div>
+            </article>
+        {% endfor %}
+        {% for meta in metas %}
+            <article class="post">
+                <div class="arc-t">
+                    <div class="arc-tile">
+                        <small><a itemtype="url" href="{{meta.url}}">{{meta.name}}</a></small>
+                        <br>
+                        <span class="arc-date"><time datetime="{{meta.date}}"
+                                                     itemprop="datePublished">{{meta.dateStr}}</time></span>
+                    </div>
+                </div>
+            </article>
+
+        {#{% else %}#}
+        {#<article class="post" style="text-align: center;">#}
+        {#<h6>暂时没有内容</h6>#}
+        {#</article>#}
+        {% endfor %}
+
+    </div>
+</div>
+<!-- jQuery (necessary for Flat UI's JavaScript plugins) -->
+<script src="/js/vendor/jquery.min.js"></script>
+<script src="/js/zoom-js/js/zoom.js"></script>
+<script src="/js/vendor/bootstrap.js"></script>
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<!-- <script src="/js/vendor/video.js"></script> -->
+<script src="/js/flat-ui.min.js"></script>
+<script src="/js/prism.js"></script>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $("#main-index").fadeIn(800);
+        $("#main-archive").fadeIn(800);
+        $("#main-post").fadeIn(500);
+        $("#postnav").fadeIn(800);
+        $("#main-page").fadeIn(500);
+        $("#pagenav").fadeIn(800);
+        $("#bottomtools").fadeIn(1200);
+        if (window.location.hash != '') {
+            var i = window.location.hash.indexOf('#comment');
+            var ii = window.location.hash.indexOf('#respond-post');
+            if (i != '-1' || ii != '-1') {
+                $("#comments").fadeIn(1000);
+            }
+        }
+        $("#thatsi").fadeIn(1300);
+        $("#footer").css('display', 'block');
+    });
+</script>
+
+<footer id="footer" class="container" style="background:rgba(255, 255, 255, 0);display:none;">
+    <hr>
+    <div style="text-align:center;padding-bottom:9px;">
+        <p>&copy; 2018 <a href="{{ config.siteUrl }}">{{ config.siteName }}</a>
+            .<a target="_blank" href="https://yumoe.com">Moricolor</a>.
+        </p>
+    </div>
+</footer>
+</body>
+</html>
