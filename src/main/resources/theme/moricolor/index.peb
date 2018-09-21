@@ -125,7 +125,7 @@
     <hr>
     <div style="text-align:center;padding-bottom:9px;">
         <p>&copy; 2018 <a href="{{ config.siteUrl }}">{{ config.siteName }}</a>
-            .<a target="_blank" href="https://yumoe.com">Moricolor</a>.
+            Using <a target="_blank" href="https://github.com/XGFan/Quiet">Quiet</a> & <a target="_blank" href="https://yumoe.com">Moricolor</a>.
         </p>
     </div>
 </footer>
