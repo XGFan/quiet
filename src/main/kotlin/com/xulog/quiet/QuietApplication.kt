@@ -1,13 +1,13 @@
-package com.xulog.quite
+package com.xulog.quiet
 
 import com.mitchellbosecke.pebble.PebbleEngine
 import com.mitchellbosecke.pebble.loader.ClasspathLoader
 import com.mitchellbosecke.pebble.loader.Loader
-import com.xulog.quite.Constants.MD_DIR
-import com.xulog.quite.Constants.STATIC_DIR
-import com.xulog.quite.Constants.THEME_DIR
-import com.xulog.quite.pebble.ExternalFileLoader
-import com.xulog.quite.pebble.PebbleTemplateEngine
+import com.xulog.quiet.Constants.MD_DIR
+import com.xulog.quiet.Constants.STATIC_DIR
+import com.xulog.quiet.Constants.THEME_DIR
+import com.xulog.quiet.pebble.ExternalFileLoader
+import com.xulog.quiet.pebble.PebbleTemplateEngine
 import org.slf4j.LoggerFactory
 import org.slf4j.impl.StaticLoggerBinder
 import spark.ModelAndView

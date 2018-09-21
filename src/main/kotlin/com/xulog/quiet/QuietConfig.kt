@@ -1,4 +1,4 @@
-package com.xulog.quite
+package com.xulog.quiet
 
 import java.util.*
 

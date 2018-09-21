@@ -8,7 +8,7 @@
 <!--* @link https://yumoe.com/-->
 <!--*/-->
 
-{# @pebvariable name="config" type="com.xulog.quite.QuietConfig" #}
+{# @pebvariable name="config" type="com.xulog.quiet.QuietConfig" #}
 <!DOCTYPE HTML>
 <html>
 <head>

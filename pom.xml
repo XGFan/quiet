@@ -99,7 +99,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.xulog.quite.QuietApplication</mainClass>
+                            <mainClass>com.xulog.quiet.QuietApplication</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

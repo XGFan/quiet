@@ -1,4 +1,4 @@
-package com.xulog.quite
+package com.xulog.quiet
 
 import com.vladsch.flexmark.ext.footnotes.FootnoteExtension
 import com.vladsch.flexmark.ext.gfm.strikethrough.StrikethroughExtension
@@ -7,7 +7,7 @@ import com.vladsch.flexmark.ext.toc.TocExtension
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.options.MutableDataSet
-import com.xulog.quite.Constants.MARKDOWN_EXTS
+import com.xulog.quiet.Constants.MARKDOWN_EXTS
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Path

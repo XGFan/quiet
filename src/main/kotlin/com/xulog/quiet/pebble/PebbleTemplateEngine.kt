@@ -1,4 +1,4 @@
-package com.xulog.quite.pebble
+package com.xulog.quiet.pebble
 
 import com.mitchellbosecke.pebble.PebbleEngine
 import com.mitchellbosecke.pebble.error.PebbleException
