@@ -112,6 +112,32 @@ class QuietApplication(clazz: Class<*>, args: Array<String>) {
         )
     }
 
+    private fun pageView(pageIndex: Int): ModelAndView {
+        val attributes = HashMap<String, Any>()
+        val page = postService.findPost(10 * (pageIndex - 1), 10)
+        attributes["metas"] = page.content.map(postToMeta).toList() //当前页文章信息
+        attributes["current"] = pageIndex //当前页码
+        attributes["total"] = page.total / 10 + 1 //总目录
+        return ModelAndView(attributes, "index.peb")
+    }
+
+    private fun categoryView(cats: List<String>): ModelAndView {
+        val attributes = HashMap<String, Any>()
+        attributes["metas"] = postService.findPost(cats).asSequence().map(postToMeta).toList() //当前页文章信息
+        attributes["current"] = cats.toCategories() //当前目录
+        attributes["children"] = postService.findChildren(cats) //子目录
+        return ModelAndView(attributes, "archive.peb")
+    }
+
+    private fun postView(post: Post): ModelAndView {
+        val attributes = HashMap<String, Any>()
+        attributes["markdown"] = post.content
+        attributes["title"] = post.title
+        attributes["create"] = post.create
+        attributes["categories"] = post.categories.toCategories()
+        return ModelAndView(attributes, "post.peb")
+    }
+
 
     private val page: API = { req, res ->
         val uri = URLDecoder.decode(req.uri(), "UTF-8")
@@ -127,32 +153,18 @@ class QuietApplication(clazz: Class<*>, args: Array<String>) {
         when {
             first == "page" -> {//首页
                 val pageIndex = splits.getOrNull(1)?.toIntOrNull() ?: 1
-                val attributes = HashMap<String, Any>()
-                val page = postService.findPost(10 * (pageIndex - 1), 10)
-                attributes["metas"] = page.content.map(postToMeta).toList() //当前页文章信息
-                attributes["current"] = pageIndex //当前页码
-                attributes["total"] = page.total / 10 + 1 //总目录
-                ModelAndView(attributes, "index.peb")
+                pageView(pageIndex)
             }
             first == "category" -> {//分类目录
                 val cats = splits.drop(1)
-                val attributes = HashMap<String, Any>()
-                attributes["metas"] = postService.findPost(cats).asSequence().map(postToMeta).toList() //当前页文章信息
-                attributes["current"] = cats.toCategories() //当前目录
-                attributes["children"] = postService.findChildren(cats) //子目录
-                ModelAndView(attributes, "archive.peb")
+                categoryView(cats)
             }
             splits.last().endsWith("html") -> { //文章
-                val attributes = HashMap<String, Any>()
                 val post = postService.findPost(uri)
                 if (post == null) {
                     Spark.halt(404, "NOT FOUND")
                 }
-                attributes["markdown"] = post!!.content
-                attributes["title"] = post.title
-                attributes["create"] = post.create
-                attributes["categories"] = post.categories.toCategories()
-                ModelAndView(attributes, "post.peb")
+                postView(post!!)
             }
             else -> {
                 Spark.halt(404, "NOT FOUND")

@@ -74,6 +74,10 @@ constructor(private val quiet: Path, private val quietConfig: QuietConfig) {
         }, "Worker").start()
     }
 
+    fun countPage(pageSize: Int): Int {
+        return posts.asSequence().filter { it.showOnPage }
+                .filter { it.categories.intersect(quietConfig.hiddenDirs).isEmpty() }.count()
+    }
 
     fun findPost(offset: Int, limit: Int): Page<Post> {
         val filter = posts.asSequence().filter { it.showOnPage }
