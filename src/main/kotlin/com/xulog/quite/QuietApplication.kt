@@ -3,15 +3,16 @@ package com.xulog.quite
 import com.mitchellbosecke.pebble.PebbleEngine
 import com.mitchellbosecke.pebble.loader.ClasspathLoader
 import com.mitchellbosecke.pebble.loader.Loader
-import com.xulog.quite.QuietApplication.Constants.MD_DIR
-import com.xulog.quite.QuietApplication.Constants.STATIC_DIR
-import com.xulog.quite.QuietApplication.Constants.THEME_DIR
+import com.xulog.quite.Constants.MD_DIR
+import com.xulog.quite.Constants.STATIC_DIR
+import com.xulog.quite.Constants.THEME_DIR
 import com.xulog.quite.pebble.ExternalFileLoader
 import com.xulog.quite.pebble.PebbleTemplateEngine
 import org.slf4j.LoggerFactory
 import org.slf4j.impl.StaticLoggerBinder
 import spark.ModelAndView
 import spark.Spark
+import java.io.File
 import java.net.URLDecoder
 import java.nio.file.Files
 import java.nio.file.Path
@@ -19,16 +20,7 @@ import java.nio.file.Paths
 import java.time.format.DateTimeFormatter
 import java.util.*
 
-
 class QuietApplication(clazz: Class<*>, args: Array<String>) {
-
-
-    object Constants {
-        const val STATIC_DIR = "public"
-        const val THEME_DIR = "theme"
-        const val MD_DIR = "markdown"
-
-    }
 
     private val logger = LoggerFactory.getLogger("Quiet")
 
@@ -54,7 +46,7 @@ class QuietApplication(clazz: Class<*>, args: Array<String>) {
             Paths.get(location).parent
         } else {
             //如果是直接运行，我们将其父目录的父目录作为保存文件的目录，方便开发调试
-            //Project/quite/target/classes/
+            //Project/quiet/target/classes/
             Paths.get(location).parent.parent
         }
         logger.info("run at {}", runtimePath)
@@ -71,7 +63,11 @@ class QuietApplication(clazz: Class<*>, args: Array<String>) {
             throw RuntimeException()
         }
         //创建文件夹
-        markdownDirectory = runtimePath.resolveOrCreate(MD_DIR)
+        markdownDirectory = if (quietConfig.markdownDir == null) {
+            runtimePath.resolveOrCreate(MD_DIR)
+        } else {
+            File(quietConfig.markdownDir).toPath()
+        }
         logger.info("markdown directory is {}", markdownDirectory)
 
 
@@ -95,7 +91,7 @@ class QuietApplication(clazz: Class<*>, args: Array<String>) {
             }
         }
 
-        postService = PostService(markdownDirectory)
+        postService = PostService(markdownDirectory, quietConfig)
 
         //创建TemplateEngine
 
@@ -107,6 +103,64 @@ class QuietApplication(clazz: Class<*>, args: Array<String>) {
     }
 
 
+    val postToMeta: (Post) -> Map<String, Any> = {
+        mapOf(
+                "name" to it.name,
+                "date" to it.create,
+                "dateStr" to it.create.toLocalDate().format(DateTimeFormatter.ofPattern("MMM d, uuuu", Locale.ENGLISH)),
+                "url" to it.dateUri
+        )
+    }
+
+
+    private val page: API = { req, res ->
+        val uri = URLDecoder.decode(req.uri(), "UTF-8")
+        val splits = uri.split("/").filter { it.isNotBlank() }
+        val first =
+                if (splits.isEmpty()) {
+                    "page"
+                } else if (splits.size == 1 && (splits.first() == "index" || splits.first() == "index.html")) {
+                    "page"
+                } else {
+                    splits.first()
+                }
+        when {
+            first == "page" -> {//首页
+                val pageIndex = splits.getOrNull(1)?.toIntOrNull() ?: 1
+                val attributes = HashMap<String, Any>()
+                val page = postService.findPost(10 * (pageIndex - 1), 10)
+                attributes["metas"] = page.content.map(postToMeta).toList() //当前页文章信息
+                attributes["current"] = pageIndex //当前页码
+                attributes["total"] = page.total / 10 + 1 //总目录
+                ModelAndView(attributes, "index.peb")
+            }
+            first == "category" -> {//分类目录
+                val cats = splits.drop(1)
+                val attributes = HashMap<String, Any>()
+                attributes["metas"] = postService.findPost(cats).asSequence().map(postToMeta).toList() //当前页文章信息
+                attributes["current"] = cats.toCategories() //当前目录
+                attributes["children"] = postService.findChildren(cats) //子目录
+                ModelAndView(attributes, "archive.peb")
+            }
+            splits.last().endsWith("html") -> { //文章
+                val attributes = HashMap<String, Any>()
+                val post = postService.findPost(uri)
+                if (post == null) {
+                    Spark.halt(404, "NOT FOUND")
+                }
+                attributes["markdown"] = post!!.content
+                attributes["title"] = post.title
+                attributes["create"] = post.create
+                attributes["categories"] = post.categories.toCategories()
+                ModelAndView(attributes, "post.peb")
+            }
+            else -> {
+                Spark.halt(404, "NOT FOUND")
+                ModelAndView(null, null)
+            }
+        }
+    }
+
     fun startWeb() {
         Spark.port(quietConfig.port)
         if (externalMode) {
@@ -114,102 +168,10 @@ class QuietApplication(clazz: Class<*>, args: Array<String>) {
         } else {
             Spark.staticFileLocation("$THEME_DIR/${quietConfig.theme}/$STATIC_DIR")
         }
-
         Spark.redirect.get("", "page/1")
         Spark.redirect.get("/", "page/1")
         Spark.redirect.get("index", "page/1")
-
-        Spark.get("page/:index", { request, response ->
-            val page = request.params(":index").toInt()
-            val attributes = HashMap<String, Any>()
-            val metas = postService.posts.sortedByDescending { it.create }
-                    .drop(10 * (page - 1))
-                    .take(10).map {
-                        mapOf(
-                                "name" to it.name,
-                                "date" to it.create,
-                                "dateStr" to it.create.toLocalDate().format(DateTimeFormatter.ofPattern("MMM d, uuuu", Locale.ENGLISH)),
-                                "url" to it.dateUri
-                        )
-                    }
-            attributes["metas"] = metas
-            attributes["current"] = page
-            attributes["total"] = postService.posts.size / 10 + 1
-            ModelAndView(attributes, "index.peb")
-        }, pebbleTemplateEngine)
-
-
-        Spark.get("*", "text/html", { req, res ->
-            val uri = URLDecoder.decode(req.uri(), "UTF-8")
-            val splits = uri.split("/").filter { it.isNotBlank() }
-            var first =
-                    if (splits.isEmpty()) {
-                        "page"
-                    } else if (splits.size == 1 && (splits.first() == "index" || splits.first() == "index.html")) {
-                        "page"
-                    } else {
-                        splits.first()
-                    }
-            if (first == "page") {
-                val page = splits.getOrNull(1)?.toIntOrNull() ?: 1
-                val attributes = HashMap<String, Any>()
-                val metas = postService.posts.sortedByDescending { it.create }
-                        .drop(10 * (page - 1))
-                        .take(10).map {
-                            mapOf(
-                                    "name" to it.name,
-                                    "date" to it.create,
-                                    "dateStr" to it.create.toLocalDate().format(DateTimeFormatter.ofPattern("MMM d, uuuu", Locale.ENGLISH)),
-                                    "url" to it.dateUri
-                            )
-                        }
-                attributes["metas"] = metas
-                attributes["current"] = page
-                attributes["total"] = postService.posts.size / 10 + 1
-                ModelAndView(attributes, "index.peb")
-            } else if (first == "category") {
-                val cats = splits.drop(1)
-                val attributes = HashMap<String, Any>()
-                attributes["current"] = cats
-                val metas = postService.posts.filter { it.matchCat(cats) }.map {
-                    mapOf(
-                            "name" to it.name,
-                            "date" to it.create,
-                            "dateStr" to it.create.toLocalDate().format(DateTimeFormatter.ofPattern("MMM d, uuuu", Locale.ENGLISH)),
-                            "url" to it.dateUri
-                    )
-                }
-                attributes["metas"] = metas
-                val children = postService.posts.sortedByDescending { it.create }
-                        .filter { it.isGrandPa(cats) }
-                        .map { it.categories.take(cats.size + 1) }
-                        .distinct()
-                        .map { it.last() to it.joinToString("/", prefix = "/category/") }
-
-                attributes["children"] = children
-                ModelAndView(attributes, "archive.peb")
-                //目录
-            } else if (splits.last().endsWith("html")) {
-                //文章
-                val attributes = HashMap<String, Any>()
-                val post = postService.posts
-                        .find { it.matchUri(uri) }
-                if (post == null) {
-                    Spark.halt(404, "NOT FOUND")
-                }
-                val url = StringBuilder("/category")
-                attributes["markdown"] = post!!.content
-                attributes["title"] = post.title
-                attributes["create"] = post.create
-                attributes["categories"] = post.categories.map {
-                    it to url.append("/").append(it).toString()
-                }
-                ModelAndView(attributes, "post.peb")
-            } else {
-                Spark.halt(404, "NOT FOUND")
-                ModelAndView(null, null)
-            }
-        }, pebbleTemplateEngine)
+        Spark.get("*", "text/html", page, pebbleTemplateEngine)
     }
 
     companion object {
@@ -217,64 +179,6 @@ class QuietApplication(clazz: Class<*>, args: Array<String>) {
         fun main(args: Array<String>) {
             val quiteApplication = QuietApplication(QuietApplication::class.java, args)
             quiteApplication.startWeb()
-        }
-    }
-
-
-}
-
-//todo
-fun Path.resolveOrCreate(name: String): Path {
-    val target = this.resolve(name)
-    return if (!Files.exists(target)) {
-        Files.createDirectory(target)
-        return target
-    } else {
-        if (!Files.isDirectory(target) || !Files.isWritable(target)) {
-            //已存在同名文件
-            throw RuntimeException("已存在同名文件或文件夹不可写")
-        } else {
-            target
-        }
-    }
-
-}
-
-class QuietConfig {
-    lateinit var siteName: String
-    lateinit var siteUrl: String
-    var port: Int = 4567
-    var theme: String = "moricolor"
-    var debug: Boolean = false
-
-
-    fun init(props: Properties) {
-        this.javaClass.declaredFields.forEach {
-            it.isAccessible = true
-            val v = props[it.name]?.toString()
-            if (v != null) {
-                when (it.type) {
-                    String::class.java -> it.set(this, v)
-                    Int::class.java -> it.set(this, v.toInt())
-                    Boolean::class.java -> it.set(this, v.toBoolean())
-                }
-            }
-        }
-    }
-
-    override fun toString(): String {
-        return "QuiteConfig(siteName='$siteName', siteUrl='$siteUrl', port=$port, theme='$theme', debug=$debug)"
-    }
-
-
-}
-
-val isInt: Any = object : Any() {
-    override fun equals(other: Any?): Boolean {
-        return if (other is String) {
-            other.toIntOrNull() != null
-        } else {
-            false
         }
     }
 }

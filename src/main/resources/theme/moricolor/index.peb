@@ -50,7 +50,7 @@
         <article>
             <dl class="dl-horizontal">
                 <dt>
-                    <a style="color:#34495e;" data-toggle="collapse"  aria-expanded="false"
+                    <a style="color:#34495e;" data-toggle="collapse" aria-expanded="false"
                        aria-controls="{{meta.name}}" class="collapsed">
                         <time datetime="{{meta.date}}" itemprop="datePublished">{{meta.dateStr}}</time>
                     </a>
@@ -64,22 +64,25 @@
 
     <div id="pagenav" class="text-right" style="display: none;">
         <ul class="pager">
-        <li class="previous">
+            <li class="previous">
+            {% if current <= 1 %}
+                <a title="" data-toggle="tooltip"><span><i class="fui-arrow-left"></i></span></a>
+            {% else %}
+                <a class="previous" title="" href="/page/{{ current-1 }}"><span><i
+                        class="fui-arrow-left"></i></span></a>
+            {% endif %}
+            </li>
+            <li>
+                <a href="/category" title="" data-toggle="tooltip" data-original-title="Category"><span><i
+                        class="fui-list"></i></span></a>
+            </li>
 
-        {% if current <= 1 %}
-            <a title="" data-toggle="tooltip"><span><i class="fui-arrow-left"></i></span></a>
-        {% else %}
-            <a class="previous" title="" href="/page/{{ current-1 }}"><span><i class="fui-arrow-left"></i></span></a>
-        </li>
-        {% endif %}
-
-        <li class="next">
-
-        {% if current >= total %}
-            <a title="" data-toggle="tooltip"><span><i class="fui-arrow-right"></i></span></a>
-        {% else %}
-            <a class="next" title="" href="/page/{{ current+1 }}"><span><i class="fui-arrow-right"></i></span></a></li>
-        {% endif %}
+            <li class="next">
+            {% if current >= total %}
+                <a title="" data-toggle="tooltip"><span><i class="fui-arrow-right"></i></span></a>
+            {% else %}
+                <a class="next" title="" href="/page/{{ current+1 }}"><span><i class="fui-arrow-right"></i></span></a>
+            {% endif %}
             </li>
         </ul>
     </div>
@@ -92,6 +95,11 @@
 <!-- <script src="/js/vendor/video.js"></script> -->
 <script src="/js/flat-ui.min.js"></script>
 <script src="/js/prism.js"></script>
+<script data-no-instant>
+    $(function () {
+        $('[data-toggle=tooltip]').tooltip();
+    });
+</script>
 <script type="text/javascript">
     $(document).ready(function () {
         $("#main-index").fadeIn(800);

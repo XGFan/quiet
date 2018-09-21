@@ -9,7 +9,7 @@ import java.io.StringWriter
 
 
 class PebbleTemplateEngine
-constructor(val engine: PebbleEngine) : TemplateEngine() {
+constructor(private val engine: PebbleEngine) : TemplateEngine() {
 
     private val globalModel = HashMap<String, Any>()
 

@@ -8,9 +8,9 @@ import java.nio.file.attribute.BasicFileAttributes
 
 
 abstract class Watcher(val root: Path) {
-    val logger = LoggerFactory.getLogger("${root.fileName} Watcher")
+    val logger = LoggerFactory.getLogger("[${root.fileName}] Watcher")!!
     val keys = HashMap<WatchKey, Path>()
-    val watcher = FileSystems.getDefault().newWatchService()
+    val watcher = FileSystems.getDefault().newWatchService()!!
 
     val watchEvents = arrayOf(StandardWatchEventKinds.OVERFLOW,
             StandardWatchEventKinds.ENTRY_CREATE,
@@ -95,7 +95,7 @@ abstract class Watcher(val root: Path) {
                 }
             }
 
-        }, "File-Watcher").start()
+        }, "Watcher").start()
 
     }
 

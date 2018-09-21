@@ -6,7 +6,13 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
     <meta name="renderer" content="webkit">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <title>{{current | join('/')}}-{{ config.siteName }}</title>
+    <title>
+    {% if current is empty %}
+        Category-{{ config.siteName }}
+    {% else %}
+    {{(current | last).first}}-{{ config.siteName }}
+    {% endif %}
+    </title>
 
     <link href="/css/mori.css" rel="stylesheet">
     <link href="/css/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
@@ -36,7 +42,9 @@
 
 <div class="container" id="main-archive" style="display: none;">
     <div class="post-content">
-        <h4 class="archive-title">Category {{current | join(" \ ") | raw}}</h4>
+        <h4 class="archive-title"><a href="/category">Category</a> \
+                                  {% for cat in current %}<a href="{{ cat.second }}">{{ cat.first }}</a> \ {% endfor %}
+        </h4>
         {% for child in children %}
             <article class="post">
                 <div class="arc-t">
