@@ -180,9 +180,6 @@ class QuietApplication(clazz: Class<*>, args: Array<String>) {
         } else {
             Spark.staticFileLocation("$THEME_DIR/${quietConfig.theme}/$STATIC_DIR")
         }
-        Spark.redirect.get("", "page/1")
-        Spark.redirect.get("/", "page/1")
-        Spark.redirect.get("index", "page/1")
         Spark.get("*", "text/html", page, pebbleTemplateEngine)
     }
 

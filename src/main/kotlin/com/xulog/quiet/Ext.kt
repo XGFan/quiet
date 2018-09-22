@@ -65,9 +65,9 @@ fun Path.resolveOrCreate(name: String): Path {
         Files.createDirectory(target)
         return target
     } else {
-        if (!Files.isDirectory(target) || !Files.isWritable(target)) {
+        if (!Files.isDirectory(target) || !Files.isReadable(target)) {
             //已存在同名文件
-            throw RuntimeException("已存在同名文件或文件夹不可写")
+            throw RuntimeException("已存在同名文件或文件夹不可读")
         } else {
             target
         }
