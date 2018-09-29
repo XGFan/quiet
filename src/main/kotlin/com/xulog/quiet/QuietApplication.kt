@@ -105,7 +105,7 @@ class QuietApplication(clazz: Class<*>, args: Array<String>) {
 
     val postToMeta: (Post) -> Map<String, Any> = {
         mapOf(
-                "name" to it.name,
+                "name" to it.title,
                 "date" to it.create,
                 "dateStr" to it.create.toLocalDate().format(DateTimeFormatter.ofPattern("MMM d, uuuu", Locale.ENGLISH)),
                 "url" to it.dateUri
