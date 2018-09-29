@@ -233,7 +233,7 @@ hr {
   font-size:15px;
 }
 .post-content p img {
-  box-shadow: 0 2px 15px 0px rgba(0,0,0,0.1);
+  /*box-shadow: 0 2px 15px 0px rgba(0,0,0,0.1);*/
   display:block;
   margin:0 auto;
   text-align: center;
