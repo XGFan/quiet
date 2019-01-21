@@ -129,7 +129,7 @@ class QuietApplication(clazz: Class<*>, args: Array<String>) {
         return ModelAndView(attributes, "archive.peb")
     }
 
-    private fun postView(post: Post): ModelAndView {
+    private fun postView(post: Post): ModelAndView? {
         val attributes = HashMap<String, Any>()
         attributes["markdown"] = post.content
         attributes["title"] = post.title
@@ -162,9 +162,11 @@ class QuietApplication(clazz: Class<*>, args: Array<String>) {
             splits.last().endsWith("html") -> { //文章
                 val post = postService.findPost(uri)
                 if (post == null) {
-                    Spark.halt(404, "NOT FOUND")
+                    res.status(404)
+                    null
+                } else {
+                    postView(post)
                 }
-                postView(post!!)
             }
             else -> {
                 Spark.halt(404, "NOT FOUND")

@@ -15,6 +15,8 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatterBuilder
+import java.time.temporal.ChronoField
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
@@ -31,7 +33,12 @@ constructor(private val quiet: Path, private val quietConfig: QuietConfig) {
     private val parser: Parser
     private val renderer: HtmlRenderer
 
-    private val dateParser = DateTimeFormatter.ofPattern("[yyyy-MM-dd HH:mm:ss][yyyy-MM-dd HH:mm][yyyy-MM-dd]")
+    private val dateParser = DateTimeFormatterBuilder()
+            .append(DateTimeFormatter.ofPattern("[yyyy-MM-dd HH:mm:ss][yyyy-MM-dd HH:mm][yyyy-MM-dd HH][yyyy-MM-dd]"))
+            .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
+            .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
+            .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0)
+            .toFormatter();
 
     //todo 略微尴尬的一些操作
     init {
@@ -53,44 +60,47 @@ constructor(private val quiet: Path, private val quietConfig: QuietConfig) {
 
         Thread(Runnable {
             while (true) {
+                Thread.sleep(1000L)
                 tasks.removeAll { taskPath ->
+                    logger.info("process {}", taskPath)
                     posts.removeAll { it.path == taskPath || it.path.startsWith(taskPath) }
                     if (Files.exists(taskPath)) {
-                        if (MARKDOWN_EXTS.any { taskPath.fileName.toString().endsWith(it) }) {
-                            logger.info("process {}", taskPath)
-                            try {
-                                val post = parseFile(quiet, taskPath)
-                                posts.add(post)
-                                posts.sortByDescending { it.create }
-                            } catch (e: Exception) {
-                                logger.error("process {} error", taskPath, e)
+                        val fileName = taskPath.fileName.toString()
+                        if (!fileName.startsWith("_") && !fileName.startsWith("~")) {
+                            if (MARKDOWN_EXTS.any { fileName.endsWith(it) }) {
+                                try {
+                                    val post = parseFile(quiet, taskPath)
+                                    posts.add(post)
+                                    posts.sortByDescending { it.create }
+                                } catch (e: Exception) {
+                                    logger.error("process {} error", taskPath, e)
+                                }
                             }
                         }
                     }
                     true
                 }
-                Thread.sleep(200L)
             }
         }, "Worker").start()
     }
 
     fun countPage(pageSize: Int): Int {
-        return posts.asSequence().filter { it.showOnPage }
+        return posts.asSequence().filterNot { it.draft }
                 .filter { it.categories.intersect(quietConfig.hiddenDirs).isEmpty() }.count()
     }
 
     fun findPost(offset: Int, limit: Int): Page<Post> {
-        val filter = posts.asSequence().filter { it.showOnPage }
+        val filter = posts.asSequence().filterNot { it.draft }
                 .filter { it.categories.intersect(quietConfig.hiddenDirs).isEmpty() }
         return filter.drop(offset).take(limit) to filter.count()
     }
 
     fun findPost(uri: String): Post? {
-        return posts.find { it.matchUri(uri) }
+        return posts.asSequence().filterNot { it.draft }.find { it.matchUri(uri) }
     }
 
     fun findPost(cats: List<String>): List<Post> {
-        return posts.filter { it.matchCat(cats) }
+        return posts.asSequence().filterNot { it.draft }.filter { it.matchCat(cats) }.toList()
     }
 
     fun findChildren(cats: List<String>): List<Category> {
@@ -106,8 +116,7 @@ constructor(private val quiet: Path, private val quietConfig: QuietConfig) {
     private fun parseFile(root: Path, markdown: Path): Post {
         val filename = markdown.fileName.toString().substringBeforeLast(".")
         val lines = ArrayList<String>()
-        val newBufferedReader = Files.newBufferedReader(markdown)
-        val content = newBufferedReader.use {
+        val content = Files.newBufferedReader(markdown).use {
             val firstLine = it.readLine()
             if (firstLine.contains("---")) {
                 while (true) {
@@ -135,18 +144,20 @@ constructor(private val quiet: Path, private val quietConfig: QuietConfig) {
                 map["title"]?.cleanQuotes() ?: filename,
                 map["slug"]?.cleanQuotes(),
                 markdown.categoriesOf(root),
-                emptyList(),
                 create,
                 update,
-                map["showOnPage"]?.toBoolean() ?: true,
+                map["draft"]?.toBoolean() ?: false,
                 content
         )
     }
 
     private fun getDate(fileCreation: LocalDateTime, fileModify: LocalDateTime, header: Map<String, String>): Pair<LocalDateTime, LocalDateTime> {
-        var create: LocalDateTime = (header["create"]?.let { LocalDateTime.parse(it, dateParser) } //TODO
+        var create: LocalDateTime = (header["create"]?.let {
+            var parse = dateParser.parse(it)
+            LocalDateTime.parse(it, dateParser)
+        } //TODO
                 ?: min(fileCreation, fileModify))
-        var update = (header["date"]?.let { LocalDateTime.parse(it, dateParser) } //TODO
+        var update = (header["update"]?.let { LocalDateTime.parse(it, dateParser) } //TODO
                 ?: max(fileCreation, fileModify))
         create = min(create, update)
         update = max(create, update)
@@ -159,10 +170,9 @@ data class Post(val path: Path,
                 val title: String,
                 val slug: String? = null, //url？
                 val categories: List<String> = emptyList(),//目录
-                val tags: List<String> = emptyList(),
                 val create: LocalDateTime, //创建时间
                 val update: LocalDateTime,//最后修改时间
-                var showOnPage: Boolean = true,
+                var draft: Boolean = false,
                 var content: String) {
     val dateUri = "/${create.format(Constants.DATE_IN_URL)}/${slug ?: title}.html"
 

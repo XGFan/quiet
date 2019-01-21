@@ -55,8 +55,9 @@ object Constants {
     const val MD_DIR = "markdown"
     val MARKDOWN_EXTS = arrayOf("md", "markdown", "mmd", "mdown")
     val DATE_IN_URL = DateTimeFormatter.ofPattern("yyyy/MM/dd")!!
+}
 
-}typealias API = (Request, Response) -> ModelAndView
+typealias API = (Request, Response) -> ModelAndView?
 
 //todo
 fun Path.resolveOrCreate(name: String): Path {

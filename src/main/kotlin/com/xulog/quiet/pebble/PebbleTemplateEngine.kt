@@ -26,7 +26,10 @@ constructor(private val engine: PebbleEngine) : TemplateEngine() {
     /**
      * {@inheritDoc}
      */
-    override fun render(modelAndView: ModelAndView): String {
+    override fun render(modelAndView: ModelAndView?): String {
+        if (modelAndView == null) {
+            return "Not Found"
+        }
         val model = modelAndView.model
         return if (model == null || model is Map<*, *>) {
             try {
