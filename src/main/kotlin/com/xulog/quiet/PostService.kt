@@ -23,6 +23,14 @@ import java.util.concurrent.ConcurrentHashMap
 
 class PostService
 constructor(private val quiet: Path, private val quietConfig: QuietConfig) {
+    companion object {
+        val DateParser: DateTimeFormatter = DateTimeFormatterBuilder()
+                .append(DateTimeFormatter.ofPattern("[yyyy-MM-dd HH:mm:ss][yyyy-MM-dd HH:mm][yyyy-MM-dd HH][yyyy-MM-dd]"))
+                .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
+                .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
+                .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0)
+                .toFormatter()
+    }
 
     private val logger = LoggerFactory.getLogger("[${quiet.fileName}] Worker")
 
@@ -33,12 +41,6 @@ constructor(private val quiet: Path, private val quietConfig: QuietConfig) {
     private val parser: Parser
     private val renderer: HtmlRenderer
 
-    private val dateParser = DateTimeFormatterBuilder()
-            .append(DateTimeFormatter.ofPattern("[yyyy-MM-dd HH:mm:ss][yyyy-MM-dd HH:mm][yyyy-MM-dd HH][yyyy-MM-dd]"))
-            .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
-            .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
-            .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0)
-            .toFormatter();
 
     //todo 略微尴尬的一些操作
     init {
@@ -84,10 +86,8 @@ constructor(private val quiet: Path, private val quietConfig: QuietConfig) {
         }, "Worker").start()
     }
 
-    fun countPage(pageSize: Int): Int {
-        return posts.asSequence().filterNot { it.draft }
-                .filter { it.categories.intersect(quietConfig.hiddenDirs).isEmpty() }.count()
-    }
+    fun countPage(pageSize: Int): Int = posts.asSequence().filterNot { it.draft }
+            .filter { it.categories.intersect(quietConfig.hiddenDirs).isEmpty() }.count()
 
     fun findPost(offset: Int, limit: Int): Page<Post> {
         val filter = posts.asSequence().filterNot { it.draft }
@@ -95,20 +95,14 @@ constructor(private val quiet: Path, private val quietConfig: QuietConfig) {
         return filter.drop(offset).take(limit) to filter.count()
     }
 
-    fun findPost(uri: String): Post? {
-        return posts.asSequence().filterNot { it.draft }.find { it.matchUri(uri) }
-    }
+    fun findPost(uri: String): Post? = posts.asSequence().filterNot { it.draft }.find { it.matchUri(uri) }
 
-    fun findPost(cats: List<String>): List<Post> {
-        return posts.asSequence().filterNot { it.draft }.filter { it.matchCat(cats) }.toList()
-    }
+    fun findPost(cats: List<String>): List<Post> = posts.asSequence().filterNot { it.draft }.filter { it.matchCat(cats) }.toList()
 
-    fun findChildren(cats: List<String>): List<Category> {
-        return posts.asSequence().filter { it.isGrandPa(cats) }
-                .map { it.categories.take(cats.size + 1) }
-                .distinct()
-                .map { it.last() to it.joinToString("/", prefix = "/category/") }.toList()
-    }
+    fun findChildren(cats: List<String>): List<Category> = posts.asSequence().filter { it.isGrandPa(cats) }
+            .map { it.categories.take(cats.size + 1) }
+            .distinct()
+            .map { it.last() to it.joinToString("/", prefix = "/category/") }.toList()
 
     /**
      * 解析markdown并预渲染文件
@@ -151,14 +145,11 @@ constructor(private val quiet: Path, private val quietConfig: QuietConfig) {
         )
     }
 
+    private fun String.toLocalDateTime(): LocalDateTime = LocalDateTime.parse(this, DateParser)
+
     private fun getDate(fileCreation: LocalDateTime, fileModify: LocalDateTime, header: Map<String, String>): Pair<LocalDateTime, LocalDateTime> {
-        var create: LocalDateTime = (header["create"]?.let {
-            var parse = dateParser.parse(it)
-            LocalDateTime.parse(it, dateParser)
-        } //TODO
-                ?: min(fileCreation, fileModify))
-        var update = (header["update"]?.let { LocalDateTime.parse(it, dateParser) } //TODO
-                ?: max(fileCreation, fileModify))
+        var create = header["create"]?.toLocalDateTime() ?: min(fileCreation, fileModify)
+        var update = header["update"]?.toLocalDateTime() ?: max(fileCreation, fileModify)
         create = min(create, update)
         update = max(create, update)
         return create to update
