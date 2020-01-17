@@ -1,5 +1,6 @@
 package com.xulog.quiet
 
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.nio.file.*
@@ -8,14 +9,11 @@ import java.nio.file.attribute.BasicFileAttributes
 
 
 abstract class Watcher(val root: Path) {
-    val logger = LoggerFactory.getLogger("[${root.fileName}] Watcher")!!
+    val logger: Logger = LoggerFactory.getLogger("[${root.fileName}] Watcher")
     val keys = HashMap<WatchKey, Path>()
-    val watcher = FileSystems.getDefault().newWatchService()!!
+    val watcher: WatchService = FileSystems.getDefault().newWatchService()
 
-    val watchEvents = arrayOf(StandardWatchEventKinds.OVERFLOW,
-            StandardWatchEventKinds.ENTRY_CREATE,
-            StandardWatchEventKinds.ENTRY_DELETE,
-            StandardWatchEventKinds.ENTRY_MODIFY)
+    val watchEvents = arrayOf(OVERFLOW, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY)
 
     private val fileVisitor = object : SimpleFileVisitor<Path>() {
         @Throws(IOException::class)
