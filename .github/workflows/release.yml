@@ -21,6 +21,6 @@ jobs:
       - name: Create Release
         uses: JasonEtco/upload-to-release@master
         with:
-          args: target\quiet-0.0.1-SNAPSHOT-jar-with-dependencies.jar application/octet-stream
+          args: target/quiet-0.0.1-SNAPSHOT-jar-with-dependencies.jar application/octet-stream
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
