@@ -63,10 +63,10 @@ class QuietApplication(clazz: Class<*>, args: Array<String>) {
             throw RuntimeException()
         }
         //创建文件夹
-        markdownDirectory = if (quietConfig.markdownDir == null) {
+        markdownDirectory = if (quietConfig.contentDir == null) {
             runtimePath.resolveOrCreate(MD_DIR)
         } else {
-            File(quietConfig.markdownDir).toPath()
+            File(quietConfig.contentDir).toPath()
         }
         logger.info("markdown directory is {}", markdownDirectory)
 
@@ -96,19 +96,19 @@ class QuietApplication(clazz: Class<*>, args: Array<String>) {
         //创建TemplateEngine
 
         val pebbleEngine = PebbleEngine.Builder()
-                .cacheActive(!quietConfig.debug)
-                .loader(templateLoader)
-                .build()
+            .cacheActive(!quietConfig.debug)
+            .loader(templateLoader)
+            .build()
         pebbleTemplateEngine = PebbleTemplateEngine(pebbleEngine).addGlobalModel("config", quietConfig)
     }
 
 
     val postToMeta: (Post) -> Map<String, Any> = {
         mapOf(
-                "name" to it.title,
-                "date" to it.create,
-                "dateStr" to it.create.toLocalDate().format(DateTimeFormatter.ofPattern("MMM d, uuuu", Locale.ENGLISH)),
-                "url" to it.dateUri
+            "name" to it.title,
+            "date" to it.create,
+            "dateStr" to it.create.toLocalDate().format(DateTimeFormatter.ofPattern("MMM d, uuuu", Locale.ENGLISH)),
+            "url" to it.dateUri
         )
     }
 
@@ -143,13 +143,13 @@ class QuietApplication(clazz: Class<*>, args: Array<String>) {
         val uri = URLDecoder.decode(req.uri(), "UTF-8")
         val splits = uri.split("/").filter { it.isNotBlank() }
         val first =
-                if (splits.isEmpty()) {
-                    "page"
-                } else if (splits.size == 1 && (splits.first() == "index" || splits.first() == "index.html")) {
-                    "page"
-                } else {
-                    splits.first()
-                }
+            if (splits.isEmpty()) {
+                "page"
+            } else if (splits.size == 1 && (splits.first() == "index" || splits.first() == "index.html")) {
+                "page"
+            } else {
+                splits.first()
+            }
         when {
             first == "page" -> {//首页
                 val pageIndex = splits.getOrNull(1)?.toIntOrNull() ?: 1
